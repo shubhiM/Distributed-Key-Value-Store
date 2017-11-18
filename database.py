@@ -10,6 +10,31 @@ class Database(object):
     __metaclass__ = Singleton
 
     def __init__(self, **kwargs):
+        """
+        self.store = {
+            "11111111": {
+                "key": {
+                    "encoding": "string",
+                    "data": "11111111"
+                },
+                "value":{
+                    "encoding": "string",
+                    "data": "abcedefgh"
+                },
+            },
+            "1010101010": {
+                "key": {
+                    "encoding": "binary",
+                    "data": "1010101010"
+                },
+                "value":{
+                    "encoding": "binary",
+                    "data": "1111100000"
+                },
+            }
+        }
+
+        """
         self.store = {}
 
 
@@ -17,23 +42,23 @@ class Database(object):
         """
         Expects list of keys in kwargs["data"]
         data = [{
-                enconding: 'binary',
+                encoding: 'binary',
                 'data': ##1111111
                 },
                 {
-                    enconding: 'string',
+                    encoding: 'string',
                     'data': ##222222
                 }
             ]
         Return = [
                     {key: {
-                            enconding: 'binary',
+                            encoding: 'binary',
                             'data': ##1111111
                             },
                             value: True
                         },
                     {key: {
-                            enconding: 'string',
+                            encoding: 'string',
                             'data': ##12324
                             },
                             value: False
@@ -66,21 +91,21 @@ class Database(object):
         [
             {
                 key: {
-                            enconding: 'binary',
+                            encoding: 'binary',
                             'data': ##1111111
                         },
                 value: {
-                            enconding: 'binary',
+                            encoding: 'binary',
                             'data': "1010101010"
                         }
             },
             {
                 key: {
-                            enconding: 'string',
+                            encoding: 'string',
                             'data': ##12324
                         },
                 value: {
-                            enconding: 'string',
+                            encoding: 'string',
                             'data': 'abcdefg'
                         }
             }
@@ -91,7 +116,7 @@ class Database(object):
         data = kwargs.get('data')
         for keyValuePair in data:
                 try:
-                    self.store[keyValuePair['key']] = keyValuePair
+                    self.store[keyValuePair["key"]["data"]] = keyValuePair
                     keysAdded += 1
                 except Exception:
                     keysFailed.append(keyValuePair)
