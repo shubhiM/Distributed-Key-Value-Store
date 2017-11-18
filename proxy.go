@@ -7,6 +7,7 @@ import (
 	//"io/ioutil"
 	"encoding/json"
 	"hash/fnv"
+	//"reflect"
 	//"container/list"
 )
 
@@ -20,6 +21,10 @@ type setObject struct {
 	value KeyVal `json:"value"`
 }
 
+type serverList struct {
+	server int 
+
+}
 func hashFunc(s string) uint32 {
 	h := fnv.New32a()
 	h.Write([]byte(s))
@@ -61,6 +66,7 @@ var results[] string
 /* get handlers definitions*/
 func setHandleFunc(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Inside setHandleFunc:"))
+	fmt.Printf("%s", r.URL)
 	switch r.Method {
 		case "GET":
 			http.Error(w, "GET not supported", 400)
@@ -68,18 +74,31 @@ func setHandleFunc(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "POST not supported", 400)
     	case "PUT":
     		// allocation using make
+    		//url := "http://localhost:3000/set"
     		request := make([]setObject,0)
     		decode := json.NewDecoder(r.Body)
     		err := decode.Decode(&request)
     		if err != nil {
     			http.Error(w,err.Error(),400)
     		}
-    	
+    		
     		for i:=0; i<len(request); i++ {
     			//fmt.Printf("keyvalue = %d",request[i].key.data)
-    			server := hashFunc(request[i].key.data) % (uint32)(len(flag.Args()))
-    			ServerList[server][i] = request[i]
+    			//server := hashFunc(request[i].key.data) % (uint32)(len(flag.Args()))
+    			fmt.Println(r.Body)
+    			/*json := ioutil.ReadAll(r.Body)
+    			//var json = []byte (r.Body)
+    			req, err := http.NewRequest("PUT", url, json)
+    			req.Header.Set("Content-Type","application/json")
+    			client := &http.Client{}
+    			resp , err := client.Do(req)
+
+    			fmt.Println("response :", resp.Status)
+    			body, _ := ioutil.ReadAll(resp.Body)
+    			fmt.Println("response body:", string(body))*/
+    			
     		}
+
     		//TBD
     	case "DELETE":
     		http.Error(w, "DELETE not supported", 400)
