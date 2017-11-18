@@ -1,5 +1,6 @@
+import json
 import sys
-import urlparse
+from urlparse import urlparse
 from BaseHTTPServer import HTTPServer
 from BaseHTTPServer import BaseHTTPRequestHandler
 
@@ -8,28 +9,43 @@ from api import API
 
 class MyHttpRequestHandler(BaseHTTPRequestHandler):
 
+    def _do_METHOD_HELPER(self, type):
+        parsedPath = urlparse(self.path)
+        result = None
+        statusCode = None
+        api = API(self)
+        if type == "GET":
+            result, statusCode =  getattr(api, parsedPath.path[1:])()
+        else:
+            content_len = int(self.headers.getheader('content-length', 0))
+            body = self.rfile.read(content_len)
+            body = json.loads(body)
+            result, statusCode =  getattr(api, parsedPath.path[1:])(**{
+                "data": body
+            })
+        self.send_response(statusCode)
+        self.send_header("Content-type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.loads(json.dumps(result)))
+        return
+
     def do_GET(self):
         """
         Handles all the GET requests
         """
-        # TODO:check for the call validity
-        api = API(self)
+        return self._do_METHOD_HELPER("GET")
 
     def do_POST(self):
         """
         Handles all the POST requests
         """
-        # TODO:check for the call validity
-        pass
-
-    def do_HEAD(self):
-        """
-        """
-        # TODO:check for the call validity
-        pass
+        return self._do_METHOD_HELPER("POST")
 
     def do_PUT(self):
-        pass
+        """
+        Handles all the PUT requests
+        """
+        return self._do_METHOD_HELPER("PUT")
 
 
 if __name__ == "__main__":

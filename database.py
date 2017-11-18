@@ -10,27 +10,114 @@ class Database(object):
     __metaclass__ = Singleton
 
     def __init__(self, **kwargs):
+        """
+        self.store = {
+            "11111111": {
+                "key": {
+                    "encoding": "string",
+                    "data": "11111111"
+                },
+                "value":{
+                    "encoding": "string",
+                    "data": "abcedefgh"
+                },
+            },
+            "1010101010": {
+                "key": {
+                    "encoding": "binary",
+                    "data": "1010101010"
+                },
+                "value":{
+                    "encoding": "binary",
+                    "data": "1111100000"
+                },
+            }
+        }
+
+        """
         self.store = {}
-        self.file = str(kwargs.get("port")) + '.json'
-        self.count = 0
+
 
     def query(self, **kwargs):
         """
-        Expects Keys in kwargs
-        Return key value pairs from database
+        Expects list of keys in kwargs["data"]
+        data = [{
+                encoding: 'binary',
+                'data': ##1111111
+                },
+                {
+                    encoding: 'string',
+                    'data': ##222222
+                }
+            ]
+        Return = [
+                    {key: {
+                            encoding: 'binary',
+                            'data': ##1111111
+                            },
+                            value: True
+                        },
+                    {key: {
+                            encoding: 'string',
+                            'data': ##12324
+                            },
+                            value: False
+                        }
+                    ]
         """
-        pass
+        result = []
+        for key in kwargs.get("data"):
+            value = self.store.get(key["data"])
+            result.append({
+                "key": key,
+                "value": True if value else False
+
+            })
+        return result
+
 
     def fetch(self):
         """
         Returns all the key value pairs from database
         """
-        self.count = self.count + 1
-        return self.count
+        return self.store.values()
+
 
     def set(self, **kwargs):
         """
-        Creates the given key/value pairs if key is not present else
-        Updates the given key/Value pairs.
+        Creates the given key value pairs if key is not present else
+        Updates the given key Value pairs.
+        Expects kwargs['data']
+        [
+            {
+                key: {
+                            encoding: 'binary',
+                            'data': ##1111111
+                        },
+                value: {
+                            encoding: 'binary',
+                            'data': "1010101010"
+                        }
+            },
+            {
+                key: {
+                            encoding: 'string',
+                            'data': ##12324
+                        },
+                value: {
+                            encoding: 'string',
+                            'data': 'abcdefg'
+                        }
+            }
+        ]
         """
-        self.count = self.count + 1
+        keysAdded  = 0
+        keysFailed = []
+        data = kwargs.get('data')
+        for keyValuePair in data:
+                try:
+                    self.store[keyValuePair["key"]["data"]] = keyValuePair
+                    keysAdded += 1
+                except Exception:
+                    keysFailed.append(keyValuePair)
+        return keysAdded, keysFailed
