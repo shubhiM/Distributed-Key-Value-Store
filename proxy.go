@@ -4,9 +4,10 @@ import (
 	"net/http"
 	"flag"
 	"fmt"
-	//"io/ioutil"
+	"io/ioutil"
 	"encoding/json"
 	"hash/fnv"
+	"os"
 	//"reflect"
 	//"container/list"
 )
@@ -111,7 +112,22 @@ func setHandleFunc(w http.ResponseWriter, r *http.Request) {
 /* post handlers */
 
 func fetchHandleFunc(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("fetchHandleFunc: fetch"))
+	response, err := http.Get("http://localhost:3000/fetch")
+    if err != nil {
+        fmt.Printf("%s", err)
+        os.Exit(1)
+    } else {
+        defer response.Body.Close()
+        contents, err := ioutil.ReadAll(response.Body)
+        if err != nil {
+            fmt.Printf("%s", err)
+            os.Exit(1)
+        }
+        fmt.Printf("%s\n", string(contents))
+        w.Header().Set("Content-Type","application/json")
+        w.Write([]byte(contents))
+	
+	}
 }
 
 /* post handlers */
