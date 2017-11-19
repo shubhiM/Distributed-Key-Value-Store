@@ -2,7 +2,6 @@ package main
 
 import (
 	"net/http"
-    "net"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -31,7 +30,11 @@ func hashFunc(s string) uint32 {
 	h.Write([]byte(s))
 	return h.Sum32()
 }
-var servers [1000]string
+
+
+var servers [1000] string
+
+
 func main() {
 	flag.Parse();
 	fmt.Printf("length of arguments = %d",len(flag.Args()));
@@ -53,72 +56,74 @@ func main() {
 var results[] string
 
 /* get handlers definitions*/
+
 func setHandleFunc(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("%s", r.URL)
-    ip,port, err := net.SplitHostPort(r.RemoteAddr)
-    fmt.Println("ip :",ip)
-    fmt.Println("port:",port)
-    fmt.Println("err:",err)
-    
-	switch r.Method {
-		case "GET":
-			http.Error(w, "GET not supported", 400)
-		case "POST":
-			http.Error(w, "POST not supported", 400)
-    	case "PUT":
-    		request := make([]setObject,0)
-            b, err := ioutil.ReadAll(r.Body)
-            fmt.Println(err)
-	        defer r.Body.Close()
-	        json.Unmarshal(b, &request)
-            for i := 0;i<len(request);i++ {
-                serverNum := hashFunc(request[i].Key.Data) % (uint32)(len(flag.Args()))
-                fmt.Println("server Num:", serverNum)
-                output, err := json.Marshal(request)
-                fmt.Println(err)
-                newReq, err := http.NewRequest(
-                    "PUT",
-                    servers[i]+"/set",
-                    bytes.NewBuffer(output))
-                    newReq.Header.Set("Content-Type", "application/json")
-                    client := &http.Client{}
-                    resp, err := client.Do(newReq)
-                    if err != nil {
-                        panic(err)
-                    }
-                    defer resp.Body.Close()
-                    fmt.Println("response Status:", resp.Status)
-                    fmt.Println("response Headers:", resp.Header)
-                    body, _ := ioutil.ReadAll(resp.Body)
-                    w.Header().Set("content-type", "application/json")
-                    w.Write(body)
-                
-                }
-	       
-    	case "DELETE":
-    		http.Error(w, "DELETE not supported", 400)
-    	default:
-    		http.Error(w, "unknown request", 400)
-		}
+    if r.Method != "PUT" {
+        http.Error(w, "Only Post method is supported", 400)
+    } else {
+        request := make([]setObject,0)
+        b, err1 := ioutil.ReadAll(r.Body)
+        if err1 != nil {
+            panic(err1)
+            os.Exit(1)
+        }
+        defer r.Body.Close()
+        json.Unmarshal(b, &request)
+        for i := 0;i<len(request);i++ {
+            serverNum := hashFunc(request[i].Key.Data) % (uint32)(len(flag.Args()))
+            fmt.Println("Selected host via Hash in set", servers[serverNum])
+            var requestArray [1] setObject
+            requestArray[0] = request[i]
+            fmt.Println("request/host", requestArray)
+            output, err2 := json.Marshal(requestArray)
+
+            fmt.Println("output", string(output))
+            if err2 != nil {
+                panic(err2)
+                os.Exit(1)
+            }
+            newReq, err3 := http.NewRequest(
+                "PUT",
+                servers[serverNum] + "/set",
+                bytes.NewBuffer(output))
+            if err3 != nil {
+                panic(err3)
+                os.Exit(1)
+            }
+            newReq.Header.Set("Content-Type", "application/json")
+            client := &http.Client{}
+            resp, err4 := client.Do(newReq)
+            if err4 != nil {
+                panic(err4)
+                os.Exit(1)
+            }
+            defer resp.Body.Close()
+            body, _ := ioutil.ReadAll(resp.Body)
+            w.WriteHeader((int)(resp.StatusCode))
+            w.Header().Set("content-type", "application/json")
+            w.Write(body)
+        }
+    }
 }
 
 /* post handlers */
 func fetchHandleFunc(w http.ResponseWriter, r *http.Request) {
-	response, err := http.Get("http://localhost:3000/fetch")
-    if err != nil {
-        fmt.Printf("%s", err)
-        os.Exit(1)
-    } else {
-        defer response.Body.Close()
-        contents, err := ioutil.ReadAll(response.Body)
-        if err != nil {
-            fmt.Printf("%s", err)
-            os.Exit(1)
-        }
-        fmt.Printf("%s\n", string(contents))
-        w.Header().Set("Content-Type","application/json")
-        w.Write([]byte(contents))
-	}
+    for i := 0;i<len(flag.Args());i++ {
+	       response, err1 := http.Get(servers[i] + "/fetch")
+           if err1 != nil {
+               panic(err1)
+               os.Exit(1)
+            }
+                defer response.Body.Close()
+                contents, err2 := ioutil.ReadAll(response.Body)
+                if err2 != nil {
+                    panic(err2)
+                    os.Exit(1)
+                }
+                w.WriteHeader((int)(response.StatusCode))
+                w.Header().Set("Content-Type","application/json")
+                w.Write([]byte(contents))
+    }
 }
 
 /* post handlers */
@@ -126,28 +131,45 @@ func queryHandleFunc(w http.ResponseWriter, r *http.Request) {
     if r.Method != "POST" {
         http.Error(w, "Only Post method is supported", 400)
     } else {
-        w.Write([]byte("queryHandleFunc: query"))
         request := make([]KeyVal, 0)
-        b, err := ioutil.ReadAll(r.Body)
+        b, err1 := ioutil.ReadAll(r.Body)
+        if err1 != nil {
+            panic(err1)
+            os.Exit(1)
+        }
         defer r.Body.Close()
         json.Unmarshal(b, &request)
-        output, err := json.Marshal(request)
-        fmt.Println(err)
-        newReq, err := http.NewRequest(
+        for i := 0;i<len(request);i++ {
+            serverNum := hashFunc(request[i].Data) % (uint32)(len(flag.Args()))
+            fmt.Println("Selected host via Hash in query", servers[serverNum])
+            var requestArray [1] KeyVal
+            requestArray[0] = request[i]
+            fmt.Println("request/host", requestArray)
+            output, err2 := json.Marshal(requestArray)
+            if err2 != nil {
+                panic(err2)
+                os.Exit(1)
+            }
+            newReq, err3 := http.NewRequest(
                 "POST",
-                "http://localhost:3000/query",
+                servers[serverNum]+"/query",
                 bytes.NewBuffer(output))
-        newReq.Header.Set("Content-Type", "application/json")
-        client := &http.Client{}
-        resp, err := client.Do(newReq)
-        if err != nil {
-            panic(err)
+            if err3 != nil {
+                panic(err3)
+                os.Exit(1)
+            }
+            newReq.Header.Set("Content-Type", "application/json")
+            client := &http.Client{}
+            resp, err4 := client.Do(newReq)
+            if err4 != nil {
+                panic(err4)
+                os.Exit(1)
+            }
+            defer resp.Body.Close()
+            body, _ := ioutil.ReadAll(resp.Body)
+            w.WriteHeader(resp.StatusCode)
+            w.Header().Set("content-type", "application/json")
+            w.Write(body)
         }
-        defer resp.Body.Close()
-        fmt.Println("response Status:", resp.Status)
-        fmt.Println("response Headers:", resp.Header)
-        body, _ := ioutil.ReadAll(resp.Body)
-        w.Header().Set("content-type", "application/json")
-        w.Write(body)
     }
 }
