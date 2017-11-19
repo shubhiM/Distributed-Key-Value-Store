@@ -66,9 +66,13 @@ class Database(object):
                     ]
         """
         result = []
+        getAllData = kwargs.get("getAllData")
         for key in kwargs.get("data"):
             value = self.store.get(key["data"])
-            result.append({
+            if getAllData:
+                result.append(value)
+            else:
+                result.append({
                 "key": key,
                 "value": True if value else False
 
@@ -76,10 +80,13 @@ class Database(object):
         return result
 
 
-    def fetch(self):
+    def fetch(self, **kwargs):
         """
         Returns all the key value pairs from database
         """
+        data = kwargs.get("data")
+        if data:
+            self.query(**{"data": data, "getAllData": True})
         return self.store.values()
 
 
