@@ -1,3 +1,7 @@
+Submitted By:
+    Shubhi Mittal
+    Shraddha phadnis
+
 README (in-memory Distributed key-value store)
 ==============================================
 
@@ -22,24 +26,30 @@ Proxy:
 ======
 
 Proxy/Router keeps track of available servers and data stored in those servers. Proxy is always run on port 8080.
-Proxy is made aware of all the servers running by passing servers as command line arguments. 
-Functionalities: 
+Proxy is made aware of all the servers running by passing servers as command line arguments.
+Functionalities:
 
 1) Proxy includes support for 3 APIs(/set,/fetch,/query). Each API is handled using respective handlers.
 2) Hash Function: In order to avoid single node having all the data, we have distributed data among all available nodes using hash code returned by hash function. Using availble nodes/servers and key data, hashfunction returns the hash value which is then trasnlated to appropriate node where request is sent.
 
 How to run Proxy:
-go run proxy.go <hostname>:<port> <hostname>:<port> 
+go run proxy.go <hostname>:<port> <hostname>:<port>
 
 Server:
 =======
+The program design for Server includes three pieces.
+1. server.py: This class implements Simple http server and inherits the basic http server class provided in python.
+2. api.py: The server requests are routed to apis defined in api.py according to the route definition and corresponding handler gets called.
+3. database.py: Database class defined in this module simulates the in memory key value database. It is a Singleton class which has only one
+live object in memory per process.
 
+For each server process running on machine we have one database instance shared across all http requests.
 
 Instructons to run the program:
 ===============================
 1) Run servers as per the requirement as follows:
-python httpServer.py <hostname> <port> 
-for example to run 2 servers: 
+python httpServer.py <hostname> <port>
+for example to run 2 servers:
              python httpServer.py localhost 3000
 			 python httpServer.py localhost 3001
 
@@ -47,7 +57,3 @@ for example to run 2 servers:
 go run proxy.go localhost:3000 localhost:3001
 
 3) Execute the curl command mentioned in client explanation section to send request to server
-
-
-
-
