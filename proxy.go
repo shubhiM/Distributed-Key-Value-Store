@@ -33,31 +33,19 @@ func hashFunc(s string) uint32 {
 
 var ServerList [1000][1000] setObject
 func main() {
-	/*var (
-	port = flag.String("p", "8080", "specify port to use defaulting to 8080");
-	)*/
-	//length := len(flag.Args())
 	flag.Parse();
-
 	fmt.Printf("length of arguments = %d",len(flag.Args()));
-
 	for i:=0; i< len(flag.Args());i++ {
 
 	}
-	// args := flag.Args()
-	//fmt.Printf("args[1] = %d", args[1]);
 	finish := make(chan bool)
-
 	proxyserver := http.NewServeMux()
 	proxyserver.HandleFunc("/set", setHandleFunc)
 	proxyserver.HandleFunc("/fetch", fetchHandleFunc)
 	proxyserver.HandleFunc("/query", queryHandleFunc)
-
 	go func() {
 		http.ListenAndServe(":8080", proxyserver)
-
 	}()
-
 	<-finish
 }
 
@@ -102,7 +90,6 @@ func setHandleFunc(w http.ResponseWriter, r *http.Request) {
 }
 
 /* post handlers */
-
 func fetchHandleFunc(w http.ResponseWriter, r *http.Request) {
 	response, err := http.Get("http://localhost:3000/fetch")
     if err != nil {
@@ -118,12 +105,36 @@ func fetchHandleFunc(w http.ResponseWriter, r *http.Request) {
         fmt.Printf("%s\n", string(contents))
         w.Header().Set("Content-Type","application/json")
         w.Write([]byte(contents))
-
 	}
 }
 
 /* post handlers */
-
 func queryHandleFunc(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("queryHandleFunc: query"))
+    if r.Method != "POST" {
+        http.Error(w, "Only Post method is supported", 400)
+    } else {
+        w.Write([]byte("queryHandleFunc: query"))
+        request := make([]KeyVal, 0)
+        b, err := ioutil.ReadAll(r.Body)
+        defer r.Body.Close()
+        json.Unmarshal(b, &request)
+        output, err := json.Marshal(request)
+        fmt.Println(err)
+        newReq, err := http.NewRequest(
+                "POST",
+                "http://localhost:3000/query",
+                bytes.NewBuffer(output))
+        newReq.Header.Set("Content-Type", "application/json")
+        client := &http.Client{}
+        resp, err := client.Do(newReq)
+        if err != nil {
+            panic(err)
+        }
+        defer resp.Body.Close()
+        fmt.Println("response Status:", resp.Status)
+        fmt.Println("response Headers:", resp.Header)
+        body, _ := ioutil.ReadAll(resp.Body)
+        w.Header().Set("content-type", "application/json")
+        w.Write(body)
+    }
 }
