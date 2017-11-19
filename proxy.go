@@ -11,6 +11,11 @@ import (
     "bytes"
 )
 
+type setResponse struct{
+    keys_added string
+    Keys_failed KeyVal `json:"Keys_failed"`
+}
+
 type KeyVal struct {
 	Encoding string `json:"encoding"`
 	Data string `json:"data"`
@@ -99,8 +104,10 @@ func setHandleFunc(w http.ResponseWriter, r *http.Request) {
             }
             defer resp.Body.Close()
             body, _ := ioutil.ReadAll(resp.Body)
+            // finalResponse := make([]setResponse,0)
+            // json.Unmarshal(body, &finalResponse)
+            w.Header().Set("Content-Type", "application/json")
             w.WriteHeader((int)(resp.StatusCode))
-            w.Header().Set("content-type", "application/json")
             w.Write(body)
         }
     }
@@ -121,8 +128,8 @@ func fetchHandleFunc(w http.ResponseWriter, r *http.Request) {
                         panic(err2)
                         os.Exit(1)
                     }
-                    w.WriteHeader((int)(response.StatusCode))
                     w.Header().Set("Content-Type","application/json")
+                    w.WriteHeader((int)(response.StatusCode))
                     w.Write([]byte(contents))
         }
     }
@@ -163,8 +170,8 @@ func fetchHandleFunc(w http.ResponseWriter, r *http.Request) {
             }
             defer resp.Body.Close()
             body, _ := ioutil.ReadAll(resp.Body)
+            w.Header().Set("Content-Type", "application/json")
             w.WriteHeader(resp.StatusCode)
-            w.Header().Set("content-type", "application/json")
             w.Write(body)
         }
     }
@@ -211,8 +218,8 @@ func queryHandleFunc(w http.ResponseWriter, r *http.Request) {
             }
             defer resp.Body.Close()
             body, _ := ioutil.ReadAll(resp.Body)
+            w.Header().Set("Content-Type", "application/json")
             w.WriteHeader(resp.StatusCode)
-            w.Header().Set("content-type", "application/json")
             w.Write(body)
         }
     }
