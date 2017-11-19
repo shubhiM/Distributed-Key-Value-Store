@@ -8,28 +8,27 @@ import (
 	"encoding/json"
 	"hash/fnv"
 	"os"
-	//"reflect"
-	//"container/list"
+    "bytes"
 )
 
 type KeyVal struct {
-	encoding string `json:"encoding"`
-	data string `json:"data"`
+	Encoding string `json:"encoding"`
+	Data string `json:"data"`
 }
 
 type setObject struct {
-	key KeyVal `json:"key"`
-	value KeyVal `json:"value"`
+	Key KeyVal `json:"key"`
+	Value KeyVal `json:"value"`
 }
 
 type serverList struct {
-	server int 
+	server int
 
 }
 func hashFunc(s string) uint32 {
 	h := fnv.New32a()
 	h.Write([]byte(s))
-	return h.Sum32() 
+	return h.Sum32()
 }
 
 var ServerList [1000][1000] setObject
@@ -48,7 +47,7 @@ func main() {
 	// args := flag.Args()
 	//fmt.Printf("args[1] = %d", args[1]);
 	finish := make(chan bool)
-	
+
 	proxyserver := http.NewServeMux()
 	proxyserver.HandleFunc("/set", setHandleFunc)
 	proxyserver.HandleFunc("/fetch", fetchHandleFunc)
@@ -56,9 +55,9 @@ func main() {
 
 	go func() {
 		http.ListenAndServe(":8080", proxyserver)
-	
+
 	}()
-	
+
 	<-finish
 }
 
@@ -66,7 +65,6 @@ var results[] string
 
 /* get handlers definitions*/
 func setHandleFunc(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Inside setHandleFunc:"))
 	fmt.Printf("%s", r.URL)
 	switch r.Method {
 		case "GET":
@@ -74,39 +72,33 @@ func setHandleFunc(w http.ResponseWriter, r *http.Request) {
 		case "POST":
 			http.Error(w, "POST not supported", 400)
     	case "PUT":
-    		// allocation using make
-    		//url := "http://localhost:3000/set"
     		request := make([]setObject,0)
-    		decode := json.NewDecoder(r.Body)
-    		err := decode.Decode(&request)
-    		if err != nil {
-    			http.Error(w,err.Error(),400)
-    		}
-    		
-    		for i:=0; i<len(request); i++ {
-    			//fmt.Printf("keyvalue = %d",request[i].key.data)
-    			//server := hashFunc(request[i].key.data) % (uint32)(len(flag.Args()))
-    			fmt.Println(r.Body)
-    			/*json := ioutil.ReadAll(r.Body)
-    			//var json = []byte (r.Body)
-    			req, err := http.NewRequest("PUT", url, json)
-    			req.Header.Set("Content-Type","application/json")
-    			client := &http.Client{}
-    			resp , err := client.Do(req)
-
-    			fmt.Println("response :", resp.Status)
-    			body, _ := ioutil.ReadAll(resp.Body)
-    			fmt.Println("response body:", string(body))*/
-    			
-    		}
-
-    		//TBD
+            b, err := ioutil.ReadAll(r.Body)
+	        defer r.Body.Close()
+	        json.Unmarshal(b, &request)
+	        output, err := json.Marshal(request)
+            fmt.Println(err)
+            newReq, err := http.NewRequest(
+                    "PUT",
+                    "http://localhost:3000/set",
+                    bytes.NewBuffer(output))
+            newReq.Header.Set("Content-Type", "application/json")
+            client := &http.Client{}
+            resp, err := client.Do(newReq)
+            if err != nil {
+                panic(err)
+            }
+            defer resp.Body.Close()
+            fmt.Println("response Status:", resp.Status)
+            fmt.Println("response Headers:", resp.Header)
+            body, _ := ioutil.ReadAll(resp.Body)
+            w.Header().Set("content-type", "application/json")
+            w.Write(body)
     	case "DELETE":
     		http.Error(w, "DELETE not supported", 400)
-    	default: 
-    		http.Error(w, "unknown request", 400)		
+    	default:
+    		http.Error(w, "unknown request", 400)
 		}
-		w.Write([]byte("Inside setHandleFunc ***:"))
 }
 
 /* post handlers */
@@ -126,7 +118,7 @@ func fetchHandleFunc(w http.ResponseWriter, r *http.Request) {
         fmt.Printf("%s\n", string(contents))
         w.Header().Set("Content-Type","application/json")
         w.Write([]byte(contents))
-	
+
 	}
 }
 
