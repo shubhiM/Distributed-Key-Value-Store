@@ -12,16 +12,21 @@ class API(object):
     """
     Defines the public APIs for the http Server
     """
-    
+
     def __init__(self, request):
         self.database = Database()
 
     def fetch(self, data=None):
         """
         Path: /fetch
-        Method: GET
+        Method: GET - to get all
+                POST - for filtered query
         """
-        result = self.database.fetch()
+        result = None
+        if data:
+            result = self.database.fetch(**{"data":data})
+        else:
+            result = self.database.fetch()
         return result, HTTP_SUCCESS
 
     def query(self, data=None):

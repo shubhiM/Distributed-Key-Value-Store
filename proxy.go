@@ -108,21 +108,65 @@ func setHandleFunc(w http.ResponseWriter, r *http.Request) {
 
 /* post handlers */
 func fetchHandleFunc(w http.ResponseWriter, r *http.Request) {
-    for i := 0;i<len(flag.Args());i++ {
-	       response, err1 := http.Get(servers[i] + "/fetch")
-           if err1 != nil {
-               panic(err1)
-               os.Exit(1)
-            }
-                defer response.Body.Close()
-                contents, err2 := ioutil.ReadAll(response.Body)
-                if err2 != nil {
-                    panic(err2)
-                    os.Exit(1)
+    if r.Method == "GET"{
+        for i := 0;i<len(flag.Args());i++ {
+    	       response, err1 := http.Get(servers[i] + "/fetch")
+               if err1 != nil {
+                   panic(err1)
+                   os.Exit(1)
                 }
-                w.WriteHeader((int)(response.StatusCode))
-                w.Header().Set("Content-Type","application/json")
-                w.Write([]byte(contents))
+                    defer response.Body.Close()
+                    contents, err2 := ioutil.ReadAll(response.Body)
+                    if err2 != nil {
+                        panic(err2)
+                        os.Exit(1)
+                    }
+                    w.WriteHeader((int)(response.StatusCode))
+                    w.Header().Set("Content-Type","application/json")
+                    w.Write([]byte(contents))
+        }
+    }
+    if r.Method == "POST" {
+        request := make([]KeyVal, 0)
+        b, err1 := ioutil.ReadAll(r.Body)
+        if err1 != nil {
+            panic(err1)
+            os.Exit(1)
+        }
+        defer r.Body.Close()
+        json.Unmarshal(b, &request)
+        for i := 0;i<len(request);i++ {
+            serverNum := hashFunc(request[i].Data) % (uint32)(len(flag.Args()))
+            fmt.Println("Selected host via Hash in query", servers[serverNum])
+            var requestArray [1] KeyVal
+            requestArray[0] = request[i]
+            fmt.Println("request/host", requestArray)
+            output, err2 := json.Marshal(requestArray)
+            if err2 != nil {
+                panic(err2)
+                os.Exit(1)
+            }
+            newReq, err3 := http.NewRequest(
+                "POST",
+                servers[serverNum]+"/fetch",
+                bytes.NewBuffer(output))
+            if err3 != nil {
+                panic(err3)
+                os.Exit(1)
+            }
+            newReq.Header.Set("Content-Type", "application/json")
+            client := &http.Client{}
+            resp, err4 := client.Do(newReq)
+            if err4 != nil {
+                panic(err4)
+                os.Exit(1)
+            }
+            defer resp.Body.Close()
+            body, _ := ioutil.ReadAll(resp.Body)
+            w.WriteHeader(resp.StatusCode)
+            w.Header().Set("content-type", "application/json")
+            w.Write(body)
+        }
     }
 }
 
