@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+    "net"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -30,13 +31,13 @@ func hashFunc(s string) uint32 {
 	h.Write([]byte(s))
 	return h.Sum32()
 }
-
-var ServerList [1000][1000] setObject
+var servers [1000]string
 func main() {
 	flag.Parse();
 	fmt.Printf("length of arguments = %d",len(flag.Args()));
+    args := flag.Args()
 	for i:=0; i< len(flag.Args());i++ {
-
+         servers[i] = "http://"+ args[i]
 	}
 	finish := make(chan bool)
 	proxyserver := http.NewServeMux()
@@ -54,6 +55,11 @@ var results[] string
 /* get handlers definitions*/
 func setHandleFunc(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%s", r.URL)
+    ip,port, err := net.SplitHostPort(r.RemoteAddr)
+    fmt.Println("ip :",ip)
+    fmt.Println("port:",port)
+    fmt.Println("err:",err)
+    
 	switch r.Method {
 		case "GET":
 			http.Error(w, "GET not supported", 400)
@@ -62,26 +68,33 @@ func setHandleFunc(w http.ResponseWriter, r *http.Request) {
     	case "PUT":
     		request := make([]setObject,0)
             b, err := ioutil.ReadAll(r.Body)
+            fmt.Println(err)
 	        defer r.Body.Close()
 	        json.Unmarshal(b, &request)
-	        output, err := json.Marshal(request)
-            fmt.Println(err)
-            newReq, err := http.NewRequest(
+            for i := 0;i<len(request);i++ {
+                serverNum := hashFunc(request[i].Key.Data) % (uint32)(len(flag.Args()))
+                fmt.Println("server Num:", serverNum)
+                output, err := json.Marshal(request)
+                fmt.Println(err)
+                newReq, err := http.NewRequest(
                     "PUT",
-                    "http://localhost:3000/set",
+                    servers[i]+"/set",
                     bytes.NewBuffer(output))
-            newReq.Header.Set("Content-Type", "application/json")
-            client := &http.Client{}
-            resp, err := client.Do(newReq)
-            if err != nil {
-                panic(err)
-            }
-            defer resp.Body.Close()
-            fmt.Println("response Status:", resp.Status)
-            fmt.Println("response Headers:", resp.Header)
-            body, _ := ioutil.ReadAll(resp.Body)
-            w.Header().Set("content-type", "application/json")
-            w.Write(body)
+                    newReq.Header.Set("Content-Type", "application/json")
+                    client := &http.Client{}
+                    resp, err := client.Do(newReq)
+                    if err != nil {
+                        panic(err)
+                    }
+                    defer resp.Body.Close()
+                    fmt.Println("response Status:", resp.Status)
+                    fmt.Println("response Headers:", resp.Header)
+                    body, _ := ioutil.ReadAll(resp.Body)
+                    w.Header().Set("content-type", "application/json")
+                    w.Write(body)
+                
+                }
+	       
     	case "DELETE":
     		http.Error(w, "DELETE not supported", 400)
     	default:
