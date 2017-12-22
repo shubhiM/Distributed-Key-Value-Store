@@ -1,8 +1,8 @@
-Submitted By:
+Contributors:
     Shubhi Mittal
     Shraddha phadnis
 
-README (in-memory Distributed key-value store)
+In-memory Distributed key-value store
 ==============================================
 
 In-memory distributed key-value store design consists of 3 parts namely Client, Server and Proxy/router
@@ -14,11 +14,11 @@ Set API(Request/Response):
 ---------------------------
 curl -H 'Content-Type: application/json' -X PUT -d '[{"key": {"encoding": "binary","data": "1234"},"value": { "encoding": "binary","data": "1010101010"}},{"key": { "encoding": "string","data": "1234"},"value": {"encoding": "string","data": "abcdefasdasdag"}}, {"key": {"encoding": "binary","data": "8959"},"value": { "encoding": "binary","data": "8959"}},{"key": { "encoding": "string","data": "##1asda2324"},"value": {"encoding": "string","data": "abcdefasdasdag"}}]' http://localhost:8080/set
 
-fetch API(Request/Response):
+Fetch API(Request/Response):
 ----------------------------
 curl -i -H "Accept: application/json" -X GET http://localhost:8080/fetch
 
-query API(Request/Response)
+Query API(Request/Response)
 ---------------------------
 curl -i -d '[{"encoding":"string", "data":"1234"}, {"encoding":"string", "data":"1234"}]' -H "Accept: application/json" -X POST http://localhost:8080/query
 
@@ -45,7 +45,7 @@ live object in memory per process.
 
 For each server process running on machine we have one database instance shared across all http requests.
 
-Instructons to run the program:
+Instructions to run the program:
 ===============================
 1) Run servers as per the requirement as follows:
 python httpServer.py <hostname> <port>
